@@ -1,4 +1,5 @@
 🌊 **Sea-Level Change Modeling Using Regression-Based AI**
+
 This project models sea-level rise using regression-based machine learning techniques and synthetic climate data. It demonstrates how AI can help analyze environmental changes by predicting sea level based on factors such as atmospheric CO₂ concentration and global temperature anomalies.
 
 📁 Contents
