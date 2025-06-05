@@ -1,0 +1,89 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+# Set random seed for reproducibility
+np.random.seed(42)
+
+# --------- Synthetic Data Generation ---------
+def generate_synthetic_sea_level_data(n_samples=200):
+    years = np.linspace(1980, 2025, n_samples)
+    co2_ppm = 350 + (years - 1980) * 2 + np.random.normal(0, 5, n_samples)
+    temp_anomaly = 0.2 + (years - 1980) * 0.02 + np.random.normal(0, 0.1, n_samples)
+    
+    # Sea level (in mm), influenced by years, CO2 and temperature
+    sea_level = (
+        -200 + 
+        0.5 * (years - 1980) + 
+        0.1 * co2_ppm + 
+        10 * temp_anomaly +
+        np.random.normal(0, 10, n_samples)
+    )
+
+    df = pd.DataFrame({
+        'year': years,
+        'co2_ppm': co2_ppm,
+        'temp_anomaly': temp_anomaly,
+        'sea_level_mm': sea_level
+    })
+    return df
+
+# Generate data
+df = generate_synthetic_sea_level_data()
+
+# --------- Data Preparation ---------
+features = ['year', 'co2_ppm', 'temp_anomaly']
+target = 'sea_level_mm'
+
+X = df[features]
+y = df[target]
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# --------- Model Training ---------
+models = {
+    'Linear Regression': LinearRegression(),
+    'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42),
+    'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, random_state=42)
+}
+
+results = {}
+
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    results[name] = {'model': model, 'mse': mse, 'r2': r2}
+    print(f"{name} - MSE: {mse:.2f}, R²: {r2:.3f}")
+
+# --------- Visualization ---------
+plt.figure(figsize=(12, 6))
+for name, res in results.items():
+    y_pred = res['model'].predict(X_test)
+    plt.scatter(y_test, y_pred, label=f"{name} (R²={res['r2']:.2f})", alpha=0.6)
+
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], '--k', label="Perfect Fit")
+plt.xlabel("Actual Sea Level (mm)")
+plt.ylabel("Predicted Sea Level (mm)")
+plt.title("Model Predictions vs Actual Sea Level")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Optional: Feature importance for tree models
+for name in ['Random Forest', 'Gradient Boosting']:
+    model = results[name]['model']
+    importances = model.feature_importances_
+    plt.figure(figsize=(6, 4))
+    sns.barplot(x=importances, y=features)
+    plt.title(f"{name} - Feature Importances")
+    plt.tight_layout()
+    plt.show()
